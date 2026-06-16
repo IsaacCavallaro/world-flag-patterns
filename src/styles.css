@@ -548,7 +548,7 @@ button {
 
 .pattern-controls {
   display: grid;
-  grid-template-columns: minmax(170px, 240px) minmax(220px, 1fr);
+  grid-template-columns: minmax(160px, 220px) minmax(220px, 1fr) minmax(160px, 220px);
   gap: 10px;
 }
 

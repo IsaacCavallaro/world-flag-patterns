@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ArrowUpDown,
   BookOpen,
   BrainCircuit,
   Check,
@@ -53,6 +54,39 @@ type PatternGroup = {
   kind: string;
   description: string;
   codes: string[];
+};
+
+type PatternSortMode = "pattern" | "name" | "region" | "subregion";
+
+const patternSortOptions: { value: PatternSortMode; label: string }[] = [
+  { value: "pattern", label: "Pattern order" },
+  { value: "name", label: "Country A-Z" },
+  { value: "region", label: "Continent" },
+  { value: "subregion", label: "Subregion" },
+];
+
+const compareCountryName = (a: Country, b: Country) => a.name.localeCompare(b.name);
+
+const sortPatternCountries = (countriesToSort: Country[], sortMode: PatternSortMode) => {
+  const sortedCountries = [...countriesToSort];
+
+  if (sortMode === "name") {
+    return sortedCountries.sort(compareCountryName);
+  }
+
+  if (sortMode === "region") {
+    return sortedCountries.sort(
+      (a, b) => a.region.localeCompare(b.region) || compareCountryName(a, b),
+    );
+  }
+
+  if (sortMode === "subregion") {
+    return sortedCountries.sort(
+      (a, b) => a.subregion.localeCompare(b.subregion) || compareCountryName(a, b),
+    );
+  }
+
+  return sortedCountries;
 };
 
 const patternGroups: PatternGroup[] = [
@@ -587,6 +621,7 @@ const PatternsView = ({
 }) => {
   const [selectedKind, setSelectedKind] = useState("All");
   const [selectedGroupId, setSelectedGroupId] = useState(patternGroups[0]?.id ?? "");
+  const [sortMode, setSortMode] = useState<PatternSortMode>("pattern");
   const visibleCodes = new Set(filteredCountries.map((country) => country.code));
   const availableGroups = patternGroups
     .map((group) => ({
@@ -603,6 +638,9 @@ const PatternsView = ({
       : availableGroups.filter((group) => group.kind === selectedKind);
   const selectedGroup =
     visibleGroups.find((group) => group.id === selectedGroupId) ?? visibleGroups[0] ?? null;
+  const sortedSelectedCountries = selectedGroup
+    ? sortPatternCountries(selectedGroup.countries, sortMode)
+    : [];
 
   useEffect(() => {
     if (!selectedGroup && visibleGroups[0]) {
@@ -650,6 +688,20 @@ const PatternsView = ({
               ))}
             </select>
           </label>
+          <label className="select-box">
+            <ArrowUpDown size={17} aria-hidden="true" />
+            <select
+              aria-label="Sort pattern countries"
+              value={sortMode}
+              onChange={(event) => setSortMode(event.target.value as PatternSortMode)}
+            >
+              {patternSortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {visibleGroups.length > 0 ? (
@@ -682,7 +734,7 @@ const PatternsView = ({
                   <span>{selectedGroup.countries.length} flags</span>
                 </div>
                 <div className="pattern-flag-grid">
-                  {selectedGroup.countries.map((country) => (
+                  {sortedSelectedCountries.map((country) => (
                     <button
                       className="pattern-flag"
                       key={`${selectedGroup.id}-${country.code}`}
